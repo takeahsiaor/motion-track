@@ -322,16 +322,18 @@ def track():
                                                                     cv2.CHAIN_APPROX_SIMPLE)
         if contours:
             total_contours = len(contours)  # Get total number of contours
+            largest_contour = None
             for c in contours:              # find contour with biggest area
                 found_area = cv2.contourArea(c)  # get area of next contour
                 # find the middle of largest bounding rectangle
                 if found_area > biggest_area:
                     motion_found = True
                     biggest_area = found_area
-                    (x, y, w, h) = cv2.boundingRect(c)
-                    c_xy = (int(x+w/2), int(y+h/2))   # centre of contour
-                    r_xy = (x, y) # Top left corner of rectangle
+                    largest_contour = c
             if motion_found:
+                (x, y, w, h) = cv2.boundingRect(largest_contour)
+                c_xy = (int(x+w/2), int(y+h/2))   # centre of contour
+                r_xy = (x, y) # Top left corner of rectangle
                 my_stuff(image2, c_xy) # Do Something here with motion data
                 if debug:
                     logging.info("cxy(%i,%i) Contours:%i Largest:%ix%i=%i sqpx",
