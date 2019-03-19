@@ -136,7 +136,7 @@ wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
 wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
 wiringpi.pwmSetClock(192)
 wiringpi.pwmSetRange(2000)
-delay_period = 0.01
+delay_period = 0.05
 min_threshold_percent = 0.05
 
 def my_stuff(image_frame, xy_pos, initial_position):
@@ -154,14 +154,14 @@ def my_stuff(image_frame, xy_pos, initial_position):
     threshold = min_threshold_percent * CAMERA_WIDTH
 
     # 60 degree FOV
-    # 150 is center, 180 is left, 120 is right
+    # 150 is center, 230 is left, 70 is right
     width = float(CAMERA_WIDTH)
     horiz_ratio = x_pos/width
-    angular_offset = 60 * horiz_ratio
-    final_position = int(120 + angular_offset)
+    angular_offset = 160 * horiz_ratio
+    final_position = int(70 + angular_offset)
 
     if abs(final_position - initial_position) < threshold:
-        return
+        return initial_position
 
     if final_position > initial_position:
         step = 1
