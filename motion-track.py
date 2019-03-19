@@ -137,9 +137,9 @@ wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
 wiringpi.pwmSetClock(192)
 wiringpi.pwmSetRange(2000)
 delay_period = 0.01
-initial_position = 150
+min_threshold_percent = 0.05
 
-def my_stuff(image_frame, xy_pos):
+def my_stuff(image_frame, xy_pos, initial_position):
     """
     This is where You would put code for handling motion event(s)
     Below is just some sample code to indicate area of movement
@@ -151,6 +151,7 @@ def my_stuff(image_frame, xy_pos):
     and records image when trigger length is reached.
     """
     x_pos, y_pos = xy_pos
+    threshold = min_threshold_percent * CAMERA_WIDTH
 
     # 60 degree FOV
     # 150 is center, 180 is left, 120 is right
@@ -158,6 +159,9 @@ def my_stuff(image_frame, xy_pos):
     horiz_ratio = x_pos/width
     angular_offset = 60 * horiz_ratio
     final_position = int(120 + angular_offset)
+
+    if abs(final_position - initial_position) < threshold:
+        return
 
     if final_position > initial_position:
         step = 1
@@ -317,6 +321,7 @@ def track():
     frame_count = 0  # initialize for get_fps
     start_time = time.time() # initialize for get_fps
     still_scanning = True
+    initial_position = 150
     while still_scanning:
         # initialize variables
         motion_found = False
@@ -364,7 +369,8 @@ def track():
                 (x, y, w, h) = cv2.boundingRect(largest_contour)
                 c_xy = (int(x+w/2), int(y+h/2))   # centre of contour
                 r_xy = (x, y) # Top left corner of rectangle
-                my_stuff(image2, c_xy) # Do Something here with motion data
+                final_position = my_stuff(image2, c_xy, initial_position) # Do Something here with motion data
+                initial_position = final_position
                 if debug:
                     logging.info("cxy(%i,%i) Contours:%i Largest:%ix%i=%i sqpx",
                                  c_xy[0], c_xy[1], total_contours,
