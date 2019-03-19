@@ -172,7 +172,7 @@ def my_stuff(image_frame, xy_pos, initial_position):
         wiringpi.pwmWrite(18, pulse)
         time.sleep(delay_period)
 
-    initial_position = final_position
+    return final_position
     # quadrant = ""
     # if y_pos < IMAGE_H/2:
     #     quadrant = quadrant + "Top"
