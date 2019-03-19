@@ -51,6 +51,8 @@ import os
 import subprocess
 import sys
 from threading import Thread
+import wiringpi
+
 try:
     import cv2
 except ImportError:
@@ -127,6 +129,16 @@ CV_RED = (0, 0, 255)
 MO_COLOR = CV_GREEN  # color of motion circle or rectangle
 
 #------------------------------------------------------------------------------
+# initialize wiringpi
+
+wiringpi.wiringPiSetupGpio()
+wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
+wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+wiringpi.pwmSetClock(192)
+wiringpi.pwmSetRange(2000)
+delay_period = 0.01
+initial_position = 150
+
 def my_stuff(image_frame, xy_pos):
     """
     This is where You would put code for handling motion event(s)
@@ -139,17 +151,35 @@ def my_stuff(image_frame, xy_pos):
     and records image when trigger length is reached.
     """
     x_pos, y_pos = xy_pos
-    quadrant = ""
-    if y_pos < IMAGE_H/2:
-        quadrant = quadrant + "Top"
+
+    # 60 degree FOV
+    # 150 is center, 180 is left, 120 is right
+    width = float(CAMERA_WIDTH)
+    horiz_ratio = x_pos/width
+    angular_offset = 60 * horiz_ratio
+    final_position = int(120 + angular_offset)
+
+    if final_position > initial_position:
+        step = 1
     else:
-        quadrant = quadrant + "Bottom"
-    if x_pos < IMAGE_W/2:
-        quadrant = quadrant + " Left"
-    else:
-        quadrant = quadrant + " Right"
-    logging.info("cxy(%i,%i) %s Quadrant image=%ix%i",
-                 x_pos, y_pos, quadrant, IMAGE_W, IMAGE_H)
+        step = -1
+
+    for pulse in range(initial_position, final_position + 1, step):
+        wiringpi.pwmWrite(18, pulse)
+        time.sleep(delay_period)
+
+    initial_position = final_position
+    # quadrant = ""
+    # if y_pos < IMAGE_H/2:
+    #     quadrant = quadrant + "Top"
+    # else:
+    #     quadrant = quadrant + "Bottom"
+    # if x_pos < IMAGE_W/2:
+    #     quadrant = quadrant + " Left"
+    # else:
+    #     quadrant = quadrant + " Right"
+    # logging.info("cxy(%i,%i) %s Quadrant image=%ix%i",
+    #              x_pos, y_pos, quadrant, IMAGE_W, IMAGE_H)
 
 #------------------------------------------------------------------------------
 class PiVideoStream:
