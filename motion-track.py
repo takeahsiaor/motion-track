@@ -136,8 +136,9 @@ wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
 wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
 wiringpi.pwmSetClock(192)
 wiringpi.pwmSetRange(2000)
-delay_period = 0.05
+delay_period = 0.03
 min_threshold_percent = 0.05
+max_threshold_percent = 0.75
 
 def my_stuff(image_frame, xy_pos, initial_position):
     """
@@ -151,16 +152,22 @@ def my_stuff(image_frame, xy_pos, initial_position):
     and records image when trigger length is reached.
     """
     x_pos, y_pos = xy_pos
-    threshold = min_threshold_percent * CAMERA_WIDTH
+    min_threshold = min_threshold_percent * CAMERA_WIDTH
+    max_threshold = max_threshold_percent * CAMERA_WIDTH
 
-    # 60 degree FOV
-    # 150 is center, 230 is left, 70 is right
+    # ~160 degree FOV
+    # 150 is center
     width = float(CAMERA_WIDTH)
     horiz_ratio = x_pos/width
-    angular_offset = 160 * horiz_ratio
-    final_position = int(70 + angular_offset)
+    angular_offset = 150 * horiz_ratio
+    final_position = int(80 + angular_offset)
 
-    if abs(final_position - initial_position) < threshold:
+    difference = abs(final_position -  initial_position)
+    if (
+        difference < min_threshold or
+        difference > max_threshold
+
+    ):
         return initial_position
 
     if final_position > initial_position:
