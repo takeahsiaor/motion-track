@@ -352,6 +352,7 @@ def track():
                 logging.info('Zeroing due to lens cap')
                 move_servo(initial_position, START_POSITION)
                 zeroed = True
+                intial_position = START_POSITION
             continue
 
         # Since the image is not black, reset black counter and zero flag
