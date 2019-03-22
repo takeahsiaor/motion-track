@@ -326,6 +326,7 @@ def track():
     initial_position = START_POSITION
     black_frame_start_time = None
     zeroed = False
+    total_black_time = 0
     while still_scanning:
         # initialize variables
         motion_found = False
@@ -350,10 +351,12 @@ def track():
             if total_black_time >= 5 and not zeroed:
                 move_servo(initial_position, START_POSITION)
                 zeroed = True
+            continue
 
         # Since the image is not black, reset black counter and zero flag
         zeroed = False
         black_frame_start_time = None
+        total_black_time = 0
 
         grayimage2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         if show_fps:
