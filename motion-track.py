@@ -139,6 +139,7 @@ wiringpi.pwmSetRange(2000)
 delay_period = 0.03
 min_threshold_percent = 0.05
 max_threshold_percent = 0.75
+wiringpi.pwmWrite(18, 150)
 
 def my_stuff(image_frame, xy_pos, initial_position):
     """
@@ -354,6 +355,7 @@ def track():
         retval, threshold_image = cv2.threshold(difference_image,
                                                 THRESHOLD_SENSITIVITY, 255,
                                                 cv2.THRESH_BINARY)
+        threshold_image = cv2.dilate(threshold_image, None, iterations=2)
         try:
             contours, hierarchy = cv2.findContours(threshold_image,
                                                    cv2.RETR_EXTERNAL,
