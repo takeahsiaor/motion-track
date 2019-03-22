@@ -342,16 +342,14 @@ def track():
 
         # keep track of how long the image is black for
         # if total sequential time is more than 5 seconds, return to zero position
-        logging.info('image sum is {}'.format(np.sum(image2)))
-        logging.info('length of image is {}'.format(len(image2)))
-        if np.sum(image2) == 0:
-            logging.info('black image found')
+        if np.sum(image2) < 30000:
             if not black_frame_start_time:
                 black_frame_start_time = time.time()
             else:
                 total_black_time = time.time() - black_frame_start_time
 
             if total_black_time >= 5 and not zeroed:
+                logging.info('Zeroing due to lens cap')
                 move_servo(initial_position, START_POSITION)
                 zeroed = True
             continue
