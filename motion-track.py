@@ -340,7 +340,8 @@ def track():
 
         # keep track of how long the image is black for
         # if total sequential time is more than 5 seconds, return to zero position
-        if cv2.countNonZero(image2) == 0:
+        image_copy = image2.copy()
+        if cv2.countNonZero(image_copy.reshape(1)) == 0:
             if not black_frame_start_time:
                 black_frame_start_time = time.time()
             else:
