@@ -172,6 +172,11 @@ def my_stuff(image_frame, xy_pos, initial_position):
     ):
         return initial_position
 
+    move_servo(initial_position, final_position)
+    return final_position
+
+
+def move_servo(initial_position, final_position):
     if final_position > initial_position:
         step = 1
     else:
@@ -180,19 +185,6 @@ def my_stuff(image_frame, xy_pos, initial_position):
     for pulse in range(initial_position, final_position + 1, step):
         wiringpi.pwmWrite(18, pulse)
         time.sleep(delay_period)
-
-    return final_position
-    # quadrant = ""
-    # if y_pos < IMAGE_H/2:
-    #     quadrant = quadrant + "Top"
-    # else:
-    #     quadrant = quadrant + "Bottom"
-    # if x_pos < IMAGE_W/2:
-    #     quadrant = quadrant + " Left"
-    # else:
-    #     quadrant = quadrant + " Right"
-    # logging.info("cxy(%i,%i) %s Quadrant image=%ix%i",
-    #              x_pos, y_pos, quadrant, IMAGE_W, IMAGE_H)
 
 #------------------------------------------------------------------------------
 class PiVideoStream:
@@ -331,6 +323,8 @@ def track():
     start_time = time.time() # initialize for get_fps
     still_scanning = True
     initial_position = START_POSITION
+    black_frame_start_time = None
+    zeroed = False
     while still_scanning:
         # initialize variables
         motion_found = False
@@ -343,6 +337,23 @@ def track():
                 image2 = cv2.flip(image2, 1)
             elif WEBCAM_VFLIP:
                 image2 = cv2.flip(image2, 0)
+
+        # keep track of how long the image is black for
+        # if total sequential time is more than 5 seconds, return to zero position
+        if cv2.countNonZero(image) == 0:
+            if not black_frame_start_time:
+                black_frame_start_time = time.time()
+            else:
+                total_black_time = time.time() - black_frame_start_time
+
+            if total_black_time >= 5 and not zeroed:
+                move_servo(initial_position, START_POSITION)
+                zeroed = True
+
+        # Since the image is not black, reset black counter and zero flag
+        zeroed = False
+        black_frame_start_time = None
+
         grayimage2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         if show_fps:
             start_time, frame_count = get_fps(start_time, frame_count)
