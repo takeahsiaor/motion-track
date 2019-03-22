@@ -139,7 +139,8 @@ wiringpi.pwmSetRange(2000)
 delay_period = 0.03
 min_threshold_percent = 0.05
 max_threshold_percent = 0.75
-wiringpi.pwmWrite(18, 150)
+START_POSITION = 147
+wiringpi.pwmWrite(18, START_POSITION)
 
 def my_stuff(image_frame, xy_pos, initial_position):
     """
@@ -160,7 +161,7 @@ def my_stuff(image_frame, xy_pos, initial_position):
     # 150 is center
     width = float(CAMERA_WIDTH)
     horiz_ratio = x_pos/width
-    angular_offset = 150 * horiz_ratio
+    angular_offset = START_POSITION * horiz_ratio
     final_position = int(80 + angular_offset)
 
     difference = abs(final_position -  initial_position)
@@ -329,7 +330,7 @@ def track():
     frame_count = 0  # initialize for get_fps
     start_time = time.time() # initialize for get_fps
     still_scanning = True
-    initial_position = 150
+    initial_position = START_POSITION
     while still_scanning:
         # initialize variables
         motion_found = False
