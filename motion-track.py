@@ -140,7 +140,7 @@ wiringpi.pwmSetRange(2000)
 delay_period = 0.03
 min_threshold_percent = 0.05
 max_threshold_percent = 0.75
-START_POSITION = 147
+START_POSITION = 145
 wiringpi.pwmWrite(18, START_POSITION)
 
 def my_stuff(image_frame, xy_pos, initial_position):
