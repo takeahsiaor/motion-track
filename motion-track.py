@@ -158,12 +158,12 @@ def my_stuff(image_frame, xy_pos, initial_position):
     min_threshold = min_threshold_percent * CAMERA_WIDTH
     max_threshold = max_threshold_percent * CAMERA_WIDTH
 
-    # ~160 degree FOV
+    # ~100 degree FOV
     # 150 is center
     width = float(CAMERA_WIDTH)
     horiz_ratio = x_pos/width
-    angular_offset = START_POSITION * horiz_ratio
-    final_position = int(80 + angular_offset)
+    angular_offset = 100 * horiz_ratio
+    final_position = int(100 + angular_offset)
 
     difference = abs(final_position -  initial_position)
     if (
