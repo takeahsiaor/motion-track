@@ -137,7 +137,7 @@ wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
 wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
 wiringpi.pwmSetClock(192)
 wiringpi.pwmSetRange(2000)
-delay_period = 0.03
+delay_period = 0.035
 min_threshold_percent = 0.02
 max_threshold_percent = 0.75
 START_POSITION = 145
@@ -158,12 +158,12 @@ def my_stuff(image_frame, xy_pos, initial_position):
     min_threshold = min_threshold_percent * CAMERA_WIDTH
     max_threshold = max_threshold_percent * CAMERA_WIDTH
 
-    # ~100 degree FOV
+    # ~90 degree FOV
     # 150 is center
     width = float(CAMERA_WIDTH)
     horiz_ratio = x_pos/width
-    angular_offset = 100 * horiz_ratio
-    final_position = int(100 + angular_offset)
+    angular_offset = 90 * horiz_ratio
+    final_position = int(105 + angular_offset)
 
     difference = abs(final_position -  initial_position)
     if (
@@ -342,19 +342,20 @@ def track():
 
         # keep track of how long the image is black for
         # if total sequential time is more than 5 seconds, return to zero position
-        if np.sum(image2) < 30000:
+        if np.sum(image2) < 100000:
             if not black_frame_start_time:
                 black_frame_start_time = time.time()
             else:
                 total_black_time = time.time() - black_frame_start_time
 
-            if total_black_time >= 5 and not zeroed:
+            if total_black_time >= 3 and not zeroed:
                 logging.info('Zeroing due to lens cap')
                 move_servo(initial_position, START_POSITION)
                 zeroed = True
                 initial_position = START_POSITION
             continue
-
+        if zeroed:
+            logging.info(np.sum(image2))
         # Since the image is not black, reset black counter and zero flag
         zeroed = False
         black_frame_start_time = None
