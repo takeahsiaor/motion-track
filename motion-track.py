@@ -184,6 +184,48 @@ def generate_ramp(ramp):
 
     pi.wave_chain(chain)  # Transmit chain
 
+
+RAMP_UP = (
+    (250, 50),
+    (320, 100),
+    (400, 150),
+    (500, 200),
+    (800, 300),
+    (1000, 400),
+    (1600, 600),
+    (2000, 1000)
+)
+
+def move_stepper(total_steps, direction):
+    pi.write(DIR, direction)
+
+    ramp = []
+    steps_left = total_steps / 2
+    # Build acceleration
+    for frequency, steps in RAMP_UP:
+        if steps > steps_left:
+            ramp.append((frequency, steps_left))
+            steps_left = 0
+            break
+        else:
+            ramp.append((frequency, steps))
+            steps_left -= steps
+    if steps_left:
+        # Continue for the rest of the total steps at max speed
+        ramp.append(RAMP_UP[-1][0], steps_left)
+
+    # build deceleration
+    full_ramp = list(ramp)
+    while ramp:
+        full_ramp.append(ramp.pop())
+
+    generate_ramp(full_ramp)
+
+
+def ramp_down(total_steps, initial_frequency):
+    pass
+
+
 def my_stuff(image_frame, xy_pos, initial_position):
     """
     This is where You would put code for handling motion event(s)
