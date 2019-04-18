@@ -42,9 +42,6 @@ pi = pigpio.pi()
 pi.set_mode(DIR, pigpio.OUTPUT)
 pi.set_mode(STEP, pigpio.OUTPUT)
 
-# Set duty cycle and frequency
-# pi.set_PWM_dutycycle(STEP, 128)  # PWM 1/2 On 1/2 Off
-# pi.set_PWM_frequency(STEP, 2400)  # 500 pulses per second
 
 def generate_ramp(ramp):
     """Generate ramp wave forms.
@@ -74,7 +71,6 @@ def generate_ramp(ramp):
 
     pi.wave_chain(chain)  # Transmit chain
     while pi.wave_tx_busy():
-        print pi.wave_tx_at()
         time.sleep(0.2)
     for id_ in wid:
         pi.wave_delete(id_)
@@ -92,7 +88,7 @@ RAMP_UP = (
 import time
 def move_stepper(total_steps, direction):
     pi.write(DIR, direction)
-    time.sleep(0.2)
+    time.sleep(0.1)
     ramp = []
     steps_left = total_steps / 2
     # Build acceleration
@@ -116,6 +112,4 @@ def move_stepper(total_steps, direction):
     generate_ramp(full_ramp)
 
 move_stepper(4000, 1)
-print 'yow!'
-#time.sleep(10)
 move_stepper(4000, 0)

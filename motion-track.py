@@ -137,8 +137,6 @@ MO_COLOR = CV_GREEN  # color of motion circle or rectangle
 # wiringpi.pwmSetClock(192)
 # wiringpi.pwmSetRange(2000)
 # delay_period = 0.035
-# min_threshold_percent = 0.02
-# max_threshold_percent = 0.75
 # START_POSITION = 145
 # wiringpi.pwmWrite(18, START_POSITION)
 
@@ -152,15 +150,23 @@ pi = pigpio.pi()
 pi.set_mode(DIR, pigpio.OUTPUT)
 pi.set_mode(STEP, pigpio.OUTPUT)
 
-# Set duty cycle and frequency
-# pi.set_PWM_dutycycle(STEP, 128)  # PWM 1/2 On 1/2 Off
-# pi.set_PWM_frequency(STEP, 2400)  # 500 pulses per second
+RAMP_UP = (
+    (250, 30),
+    (320, 40),
+    (400, 45),
+    (500, 60),
+    (800, 90),
+    (1000, 200),
+    (1600, 160),
+    (2000, 200),
+)
+
 
 def generate_ramp(ramp):
     """Generate ramp wave forms.
     ramp:  List of [Frequency, Steps]
     """
-    pi.wave_clear()     # clear existing waves
+    #pi.wave_clear()     # clear existing waves
     length = len(ramp)  # number of ramp levels
     wid = [-1] * length
 
@@ -183,22 +189,15 @@ def generate_ramp(ramp):
         chain += [255, 0, wid[i], 255, 1, x, y]
 
     pi.wave_chain(chain)  # Transmit chain
+    while pi.wave_tx_busy():
+        time.sleep(0.2)
+    for id_ in wid:
+        pi.wave_delete(id_)
 
-
-RAMP_UP = (
-    (250, 50),
-    (320, 100),
-    (400, 150),
-    (500, 200),
-    (800, 300),
-    (1000, 400),
-    (1600, 600),
-    (2000, 1000)
-)
 
 def move_stepper(total_steps, direction):
     pi.write(DIR, direction)
-
+    time.sleep(0.1)
     ramp = []
     steps_left = total_steps / 2
     # Build acceleration
@@ -212,7 +211,7 @@ def move_stepper(total_steps, direction):
             steps_left -= steps
     if steps_left:
         # Continue for the rest of the total steps at max speed
-        ramp.append(RAMP_UP[-1][0], steps_left)
+        ramp.append((RAMP_UP[-1][0], steps_left))
 
     # build deceleration
     full_ramp = list(ramp)
@@ -222,53 +221,35 @@ def move_stepper(total_steps, direction):
     generate_ramp(full_ramp)
 
 
-def ramp_down(total_steps, initial_frequency):
-    pass
+CURRENT_X = CAMERA_WIDTH / 2
+# ~90 degree FOV
+# 6400 steps per revolution 360 degree
+STEPS_PER_PIXEL = 1600 / CAMERA_WIDTH
+min_threshold_percent = 0.05
+max_threshold_percent = 0.75
 
 
-def my_stuff(image_frame, xy_pos, initial_position):
-    """
-    This is where You would put code for handling motion event(s)
-    Below is just some sample code to indicate area of movement
-    I have added image_frame in case you want to save and image
-    based on some trigger event. You will need to create
-    your own trigger event.  See https://github.com/pageauc/speed-camera
-    for tracking moving objects and recording speed images.  There is also
-    a security plugin that does not use speed data but just tracks motion
-    and records image when trigger length is reached.
-    """
+def motion_detected(xy_pos, force=False):
     x_pos, y_pos = xy_pos
     min_threshold = min_threshold_percent * CAMERA_WIDTH
     max_threshold = max_threshold_percent * CAMERA_WIDTH
 
-    # ~90 degree FOV
-    # 150 is center
-    width = float(CAMERA_WIDTH)
-    horiz_ratio = x_pos/width
-    angular_offset = 90 * horiz_ratio
-    final_position = int(105 + angular_offset)
 
-    difference = abs(final_position -  initial_position)
+    difference = abs(x_pos -  CURRENT_X)
     if (
         difference < min_threshold or
-        difference > max_threshold
+        difference > max_threshold and
+        not force
 
     ):
-        return initial_position
+        return
 
-    move_servo(initial_position, final_position)
-    return final_position
+    direction = int(x_pos > CURRENT_X)
+    total_steps = difference * STEPS_PER_PIXEL
 
+    move_stepper(total_steps, direction)
+    CURRENT_X = x_pos
 
-def move_servo(initial_position, final_position):
-    if final_position > initial_position:
-        step = 1
-    else:
-        step = -1
-
-    for pulse in range(initial_position, final_position + 1, step):
-        wiringpi.pwmWrite(18, pulse)
-        time.sleep(delay_period)
 
 #------------------------------------------------------------------------------
 class PiVideoStream:
@@ -406,7 +387,7 @@ def track():
     frame_count = 0  # initialize for get_fps
     start_time = time.time() # initialize for get_fps
     still_scanning = True
-    initial_position = START_POSITION
+
     black_frame_start_time = None
     zeroed = False
     total_black_time = 0
@@ -433,9 +414,8 @@ def track():
 
             if total_black_time >= 3 and not zeroed:
                 logging.info('Zeroing due to lens cap')
-                move_servo(initial_position, START_POSITION)
+                motion_detected((CAMERA_WIDTH/2, 0), force=True)
                 zeroed = True
-                initial_position = START_POSITION
             continue
         if zeroed:
             logging.info(np.sum(image2))
@@ -480,7 +460,7 @@ def track():
                 (x, y, w, h) = cv2.boundingRect(largest_contour)
                 c_xy = (int(x+w/2), int(y+h/2))   # centre of contour
                 r_xy = (x, y) # Top left corner of rectangle
-                final_position = my_stuff(image2, c_xy, initial_position) # Do Something here with motion data
+                final_position = motion_detected(c_xy) # Do Something here with motion data
                 initial_position = final_position
                 if debug:
                     logging.info("cxy(%i,%i) Contours:%i Largest:%ix%i=%i sqpx",
