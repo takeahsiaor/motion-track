@@ -75,19 +75,19 @@ def generate_ramp(ramp):
     pi.wave_chain(chain)  # Transmit chain
 
 RAMP_UP = (
-    (250, 50),
-    (320, 100),
-    (400, 150),
-    (500, 200),
-    (800, 300),
-    (1000, 400),
-    (1600, 600),
+    (250, 100),
+    (320, 200),
+    (400, 350),
+    (500, 400),
+    (800, 600),
+    (1000, 700),
+    (1600, 800),
     (2000, 1000)
 )
-
+import time
 def move_stepper(total_steps, direction):
     pi.write(DIR, direction)
-
+    time.sleep(0.2)
     ramp = []
     steps_left = total_steps / 2
     # Build acceleration
@@ -110,5 +110,7 @@ def move_stepper(total_steps, direction):
 
     generate_ramp(full_ramp)
 
-move_stepper(2000, 1)
-move_stepper(2000, 0)
+move_stepper(4000, 1)
+print 'yow!'
+#time.sleep(1)
+#move_stepper(4000, 0)
