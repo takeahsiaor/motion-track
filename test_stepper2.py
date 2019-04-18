@@ -50,7 +50,7 @@ def generate_ramp(ramp):
     """Generate ramp wave forms.
     ramp:  List of [Frequency, Steps]
     """
-    pi.wave_clear()     # clear existing waves
+    #pi.wave_clear()     # clear existing waves
     length = len(ramp)  # number of ramp levels
     wid = [-1] * length
 
@@ -73,16 +73,21 @@ def generate_ramp(ramp):
         chain += [255, 0, wid[i], 255, 1, x, y]
 
     pi.wave_chain(chain)  # Transmit chain
+    while pi.wave_tx_busy():
+        print pi.wave_tx_at()
+        time.sleep(0.2)
+    for id_ in wid:
+        pi.wave_delete(id_)
 
 RAMP_UP = (
-    (250, 100),
-    (320, 200),
-    (400, 350),
-    (500, 400),
-    (800, 600),
-    (1000, 700),
-    (1600, 800),
-    (2000, 1000)
+    (250, 30),
+    (320, 40),
+    (400, 45),
+    (500, 60),
+    (800, 90),
+    (1000, 200),
+    (1600, 160),
+    (2000, 200),
 )
 import time
 def move_stepper(total_steps, direction):
@@ -101,7 +106,7 @@ def move_stepper(total_steps, direction):
             steps_left -= steps
     if steps_left:
         # Continue for the rest of the total steps at max speed
-        ramp.append(RAMP_UP[-1][0], steps_left)
+        ramp.append((RAMP_UP[-1][0], steps_left))
 
     # build deceleration
     full_ramp = list(ramp)
@@ -112,5 +117,5 @@ def move_stepper(total_steps, direction):
 
 move_stepper(4000, 1)
 print 'yow!'
-#time.sleep(1)
-#move_stepper(4000, 0)
+#time.sleep(10)
+move_stepper(4000, 0)
