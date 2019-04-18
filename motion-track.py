@@ -52,7 +52,6 @@ import subprocess
 import sys
 from threading import Thread
 import numpy as np
-import wiringpi
 
 try:
     import cv2
@@ -131,17 +130,59 @@ MO_COLOR = CV_GREEN  # color of motion circle or rectangle
 
 #------------------------------------------------------------------------------
 # initialize wiringpi
+# import wiringpi
+# wiringpi.wiringPiSetupGpio()
+# wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
+# wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+# wiringpi.pwmSetClock(192)
+# wiringpi.pwmSetRange(2000)
+# delay_period = 0.035
+# min_threshold_percent = 0.02
+# max_threshold_percent = 0.75
+# START_POSITION = 145
+# wiringpi.pwmWrite(18, START_POSITION)
 
-wiringpi.wiringPiSetupGpio()
-wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
-wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
-wiringpi.pwmSetClock(192)
-wiringpi.pwmSetRange(2000)
-delay_period = 0.035
-min_threshold_percent = 0.02
-max_threshold_percent = 0.75
-START_POSITION = 145
-wiringpi.pwmWrite(18, START_POSITION)
+import pigpio
+DIR = 17     # Direction GPIO Pin
+STEP = 27    # Step GPIO Pin
+# Connect to pigpiod daemon
+pi = pigpio.pi()
+
+# Set up pins as an output
+pi.set_mode(DIR, pigpio.OUTPUT)
+pi.set_mode(STEP, pigpio.OUTPUT)
+
+# Set duty cycle and frequency
+# pi.set_PWM_dutycycle(STEP, 128)  # PWM 1/2 On 1/2 Off
+# pi.set_PWM_frequency(STEP, 2400)  # 500 pulses per second
+
+def generate_ramp(ramp):
+    """Generate ramp wave forms.
+    ramp:  List of [Frequency, Steps]
+    """
+    pi.wave_clear()     # clear existing waves
+    length = len(ramp)  # number of ramp levels
+    wid = [-1] * length
+
+    # Generate a wave per ramp level
+    for i in range(length):
+        frequency = ramp[i][0]
+        micros = int(500000 / frequency)
+        wf = []
+        wf.append(pigpio.pulse(1 << STEP, 0, micros))  # pulse on
+        wf.append(pigpio.pulse(0, 1 << STEP, micros))  # pulse off
+        pi.wave_add_generic(wf)
+        wid[i] = pi.wave_create()
+
+    # Generate a chain of waves
+    chain = []
+    for i in range(length):
+        steps = ramp[i][1]
+        x = steps & 255
+        y = steps >> 8
+        chain += [255, 0, wid[i], 255, 1, x, y]
+
+    pi.wave_chain(chain)  # Transmit chain
 
 def my_stuff(image_frame, xy_pos, initial_position):
     """
