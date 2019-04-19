@@ -95,7 +95,7 @@ if not os.path.exists(CONFIG_FILE_PATH):
     CONFIG_FILE.write(WGET_FILE.read())
     CONFIG_FILE.close()
 from config import *  # Read variables from config.py file
-
+print 'WINDOW IS {}'.format(window_on)
 # Check that pi camera module is installed and enabled
 if not WEBCAM:
     CAM_RESULT = subprocess.check_output("vcgencmd get_camera", shell=True)
@@ -157,8 +157,8 @@ RAMP_UP = (
     (500, 60),
     (800, 90),
     (1000, 200),
-    (1600, 160),
-    (2000, 200),
+    #(1600, 160),
+    #(2000, 200),
 )
 
 
@@ -193,6 +193,7 @@ def generate_ramp(ramp):
         time.sleep(0.2)
     for id_ in wid:
         pi.wave_delete(id_)
+    time.sleep(0.5)
 
 
 def move_stepper(total_steps, direction):
@@ -224,12 +225,19 @@ def move_stepper(total_steps, direction):
 CURRENT_X = CAMERA_WIDTH / 2
 # ~90 degree FOV
 # 6400 steps per revolution 360 degree
-STEPS_PER_PIXEL = 1600 / CAMERA_WIDTH
+FOV = 140
+FOV_RATIO = 140/360.0
+STEPPER_MOTOR_REVOLUTION_TO_PLATFORM = 16
+MICROSTEP_TURNS = 3200
+STEPS_PER_REVOLUTION = MICROSTEP_TURNS * STEPPER_MOTOR_REVOLUTION_TO_PLATFORM
+
+STEPS_PER_PIXEL = int(STEPS_PER_REVOLUTION * FOV_RATIO / CAMERA_WIDTH)
 min_threshold_percent = 0.05
 max_threshold_percent = 0.75
 
 
 def motion_detected(xy_pos, force=False):
+    global CURRENT_X
     x_pos, y_pos = xy_pos
     min_threshold = min_threshold_percent * CAMERA_WIDTH
     max_threshold = max_threshold_percent * CAMERA_WIDTH
