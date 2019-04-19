@@ -193,7 +193,7 @@ def generate_ramp(ramp):
         time.sleep(0.2)
     for id_ in wid:
         pi.wave_delete(id_)
-    time.sleep(0.5)
+    time.sleep(0.25)
 
 
 def move_stepper(total_steps, direction):
@@ -225,10 +225,10 @@ def move_stepper(total_steps, direction):
 CURRENT_X = CAMERA_WIDTH / 2
 # ~90 degree FOV
 # 6400 steps per revolution 360 degree
-FOV = 140
-FOV_RATIO = 140/360.0
-STEPPER_MOTOR_REVOLUTION_TO_PLATFORM = 16
-MICROSTEP_TURNS = 3200
+FOV = 100
+FOV_RATIO = FOV/360.0
+STEPPER_MOTOR_REVOLUTION_TO_PLATFORM = 16.0
+MICROSTEP_TURNS = 1600
 STEPS_PER_REVOLUTION = MICROSTEP_TURNS * STEPPER_MOTOR_REVOLUTION_TO_PLATFORM
 
 STEPS_PER_PIXEL = int(STEPS_PER_REVOLUTION * FOV_RATIO / CAMERA_WIDTH)
